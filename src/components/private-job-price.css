@@ -1,0 +1,4 @@
+.private-job-price{position:relative;user-select:none;-webkit-user-select:none;min-height:48px}
+.price-watermark{display:block;font-size:10px!important;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;letter-spacing:.2px}
+.private-price-print{display:none}
+@media print{.private-price-content{display:none!important}.private-price-print{display:block!important}}

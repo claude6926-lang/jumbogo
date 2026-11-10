@@ -1,0 +1,28 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import type {Job} from '../src/lib/domain';
+process.env.DATABASE_PATH=':memory:';process.env.TURSO_DATABASE_URL='';process.env.DEMO_MODE='false';process.env.DOCUMENT_ENCRYPTION_KEY='a'.repeat(64);
+test('transport receipts use actual booked fare, require verified payment, preserve credits and send once',async()=>{
+ const {db,saveJob}=await import('../src/lib/server/db');await import('../src/lib/server/driver-store');const mail=await import('../src/lib/server/payment-email');
+ for(const [id,role] of [['payer','user'],['driver','driver']])await db.prepare('INSERT INTO users VALUES(?,?,?,?,0)').run(id,id,'',role);
+ await db.prepare("INSERT INTO accounts(user_id,email,phone,role,created_at) VALUES('payer','payer@example.com','0812345678','user',?)").run(new Date().toISOString());
+ const job:Job={id:randomUUID(),userId:'payer',driverId:'driver',pickup:'Pickup test',drops:['Drop test'],vehicle:'pickup',status:'SEARCHING',fare:{base:250,distance:11,distanceFee:132,helper:300,stops:0,total:682},credit:0,total:682,note:'',scheduledAt:null,createdAt:new Date().toISOString(),history:[]};
+ await saveJob(job);await mail.queueTransportReceipt(job.id);assert.equal((await db.prepare('SELECT * FROM payment_email_outbox').all()).length,0);
+ job.status='COMPLETED';await saveJob(job);await mail.queueTransportReceipt(job.id);assert.equal((await db.prepare('SELECT * FROM payment_email_outbox').all()).length,0,'completion is not proof of cash receipt');
+ await db.prepare('INSERT INTO driver_settlements VALUES(?,?,?,?,?,?,?,?)').run(job.id,'driver',682,0,682,0,'cash-confirmed',new Date().toISOString());await mail.queueTransportReceipt(job.id);await mail.queueTransportReceipt(job.id);
+ assert.equal((await db.prepare('SELECT * FROM payment_email_outbox').all()).length,1);
+ const text=String((await db.prepare('SELECT text FROM payment_email_outbox').get())?.text);
+ for(const value of ['250.00','132.00','300.00','682.00','11 กม.','ชำระด้วยเครดิตกระเป๋าเงิน: 0.00'])assert.ok(text.includes(value));
+ assert.equal(text.includes('เติมเงิน Wallet'),false);
+ delete process.env.RESEND_API_KEY;await mail.deliverPaymentEmail('transport',job.id);assert.equal((await db.prepare('SELECT status FROM payment_email_outbox').get())?.status,'missing_config');
+ process.env.RESEND_API_KEY='fixture';process.env.MAIL_FROM='receipts@example.com';const original=globalThis.fetch;let calls=0;const bodies:string[]=[];
+ globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://api.resend.com/emails');calls++;bodies.push(String(init?.body));assert.deepEqual(JSON.parse(String(init?.body)).to,['payer@example.com']);return calls===1?new Response('',{status:503}):Response.json({id:'mail_fixture'});};
+ try{await mail.deliverPaymentEmail('transport',job.id);await db.prepare('UPDATE payment_email_outbox SET next_attempt=0').run();await Promise.all([mail.deliverPaymentEmail('transport',job.id),mail.deliverPaymentEmail('transport',job.id)]);assert.equal(calls,2);assert.equal(bodies[0],bodies[1]);await mail.deliverPaymentEmail('transport',job.id);assert.equal(calls,2);
+ const wallet={...job,id:randomUUID(),credit:682,total:0};await saveJob(wallet);await mail.queueTransportReceipt(wallet.id);assert.equal((await db.prepare("SELECT * FROM payment_email_outbox WHERE payment_id=?").all(wallet.id)).length,0,'cannot trust client credit field');
+ await db.prepare("INSERT INTO ledger VALUES(?,?,?,?,?,?,?)").run(randomUUID(),'payer',-682,'BOOKING',wallet.id,'debit-'+wallet.id,new Date().toISOString());await mail.queueTransportReceipt(wallet.id);assert.equal((await db.prepare("SELECT * FROM payment_email_outbox WHERE payment_id=?").all(wallet.id)).length,1);
+ await mail.queuePaymentEmail('wallet','not-a-payment');await mail.deliverPaymentEmail('wallet','not-a-payment');assert.equal(calls,2,'topups never send transport receipts');
+ const extras=mail.transportReceiptText({...job,fare:{...job.fare,stairs:80,total:762},credit:100,total:662},'receipt',new Date().toISOString(),'ref');assert.match(extras,/ยกขึ้นบันได: 80.00/);assert.match(extras,/เครดิตกระเป๋าเงิน: 100.00/);assert.match(extras,/นอก Wallet: 662.00/);
+ }finally{globalThis.fetch=original;delete process.env.RESEND_API_KEY;delete process.env.MAIL_FROM;}
+});
+test('test transport receipt matches supplied 682 breakdown without charging or activating anything',async()=>{const {db}=await import('../src/lib/server/db');const {sendTestPaymentEmail}=await import('../src/lib/server/payment-email');await db.prepare("INSERT INTO users VALUES('test-admin','Admin','','admin',0)").run();process.env.RESEND_API_KEY='fixture';process.env.MAIL_FROM='receipts@example.com';const original=globalThis.fetch;let calls=0;globalThis.fetch=async(_url,init)=>{calls++;const body=JSON.parse(String(init?.body));assert.deepEqual(body.to,['tester@example.com']);assert.match(body.subject,/\[TEST\]/);assert.match(body.text,/ไม่มีการชำระเงินจริง/);assert.match(body.text,/รวมค่าขนส่ง: 682.00/);return Response.json({id:'test-mail'});};try{const input={email:'tester@example.com',kind:'transport',idem:randomUUID()};assert.equal((await sendTestPaymentEmail('test-admin',input)).status,'sent');await sendTestPaymentEmail('test-admin',input);assert.equal(calls,1);assert.equal((await db.prepare("SELECT * FROM ledger WHERE user_id='test-admin'").all()).length,0);await assert.rejects(sendTestPaymentEmail('test-admin',{...input,email:'another@example.com'}));await assert.rejects(sendTestPaymentEmail('test-admin',{...input,kind:'wallet',idem:randomUUID()}));}finally{globalThis.fetch=original;delete process.env.RESEND_API_KEY;delete process.env.MAIL_FROM;}});

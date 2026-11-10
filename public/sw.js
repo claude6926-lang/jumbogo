@@ -1,0 +1,4 @@
+const CACHE='jumbo-static-v1';
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{if(event.request.mode==='navigate')event.respondWith(fetch(event.request).catch(()=>new Response('<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>JUMBO GO Offline</title><body style="background:#090909;color:white;font:18px sans-serif;padding:10vh 8vw"><h1>JUMBO GO</h1><p>ไม่มีการเชื่อมต่อ / You are offline</p><p>กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง / Reconnect and reload.</p><button onclick="location.reload()">ลองอีกครั้ง / Retry</button></body></html>',{headers:{'Content-Type':'text/html; charset=utf-8'}})));});

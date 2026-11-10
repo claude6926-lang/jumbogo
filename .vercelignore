@@ -1,0 +1,19 @@
+# Never upload local accounts, encrypted documents, keys or TLS credentials.
+data/
+certificates/
+.env*
+!.env.example
+.next/
+.next-dev/
+.next-sandbox/
+.next-dev-backup-*/
+node_modules/
+.npm-cache/
+output/
+qa-artifacts/
+tmp/
+.vercel-release/
+*.tsbuildinfo
+
+video-studio/
+ai-editing-studio-kit/

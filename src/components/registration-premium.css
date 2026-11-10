@@ -1,0 +1,10 @@
+.registration-premium{display:flex;align-items:center;gap:24px;margin:24px 0;padding:24px;border:1px solid #493035;border-radius:16px;background:linear-gradient(120deg,#211316,#141414);text-align:left}
+.registration-premium>div{min-width:0;flex:1}
+.registration-premium-label{display:block;color:#ff6b78;font-size:11px;font-weight:600;letter-spacing:1.5px}
+.registration-premium h2{margin:8px 0;font-size:20px;line-height:1.4;color:#fff}
+.registration-premium p{margin:0;color:#c3babc;font-size:13px;line-height:1.7}
+.registration-premium small{display:block;color:#b4a5a8;font-size:11px;margin-top:12px;line-height:1.6}
+.registration-premium>a{display:inline-flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;border:1px solid #76404a;border-radius:10px;padding:12px 16px;color:#fff;font-size:13px;font-weight:500;text-decoration:none;background:#351b20}
+.registration-premium>a:hover{background:#4c2029;border-color:#ff6b78}
+.registration-premium>a:focus-visible{outline:2px solid #fff;outline-offset:4px}
+@media(max-width:600px){.registration-premium{align-items:stretch;flex-direction:column;gap:16px;padding:20px}.registration-premium h2{font-size:18px}.registration-premium>a{align-self:flex-start}}

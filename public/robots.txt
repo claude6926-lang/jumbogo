@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /user/
+Disallow: /driver/
+Disallow: /company
+Disallow: /jobs/mine
+Disallow: /jobs/new
+
+Sitemap: https://jumbogo.app/sitemap.xml

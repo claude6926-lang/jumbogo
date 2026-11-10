@@ -1,0 +1,24 @@
+.promo-page .pm-header{gap:20px;flex-wrap:wrap;height:auto;min-height:84px;padding-block:16px}
+.promo-page .pm-header nav{gap:18px}
+.promo-page .pm-header-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.promo-page .pm-header-actions .pm-button{min-height:46px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;white-space:nowrap;gap:10px}
+.promo-page .pm-header-premium{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 4px 18px #f20d212b}
+.promo-page .pm-header-premium:hover{background:#ce0013;border-color:#ce0013}
+.promo-page .pm-header-login{background:#fff;color:#111;border-color:#fff}
+.promo-page .pm-header-login:hover{background:#eee;border-color:#eee}
+.promo-page .pm-header-login svg{width:18px;height:18px}
+.promo-page .pm-language{flex-shrink:0;margin-left:0;gap:2px;padding:4px;background:#171717;border:1px solid #353535;border-radius:12px}
+.promo-page .pm-language button{min-height:34px;min-width:36px;padding:6px 9px;background:transparent;color:#aaa;border:0;border-radius:8px;font-size:12px;font-weight:600;line-height:1}
+.promo-page .pm-language button.active{background:var(--red);color:#fff}
+.promo-page .pm-header nav{flex-wrap:wrap;justify-content:center}
+.promo-page .pm-hero-copy,.promo-page .pm-header nav{min-width:0}
+html[lang="en"] .promo-page .pm-hero h1{white-space:normal;overflow-wrap:break-word}
+@media(min-width:761px) and (max-width:1250px){.promo-page .pm-header nav{order:3;width:100%;justify-content:center;flex-wrap:wrap;margin:0}}
+@media(max-width:760px){
+  .promo-page .pm-header{height:auto;min-height:74px;gap:14px}
+  .promo-page .pm-menu-toggle{margin-left:0;order:2;border-radius:10px}
+  .promo-page .pm-language{order:1;margin-left:auto}
+  .promo-page .pm-header-actions{order:3;flex-basis:100%;margin:0;display:grid;grid-template-columns:1.35fr 1fr;gap:10px}
+  .promo-page .pm-header-actions .pm-button{font-size:13px;padding:10px 8px;min-height:46px}
+  .promo-page .pm-header nav{top:100%;order:4}
+}

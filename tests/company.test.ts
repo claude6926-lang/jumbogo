@@ -1,0 +1,42 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import type {Session} from '../src/lib/domain';
+process.env.DATABASE_PATH=':memory:';process.env.TURSO_DATABASE_URL='';process.env.DEMO_MODE='false';process.env.DOCUMENT_ENCRYPTION_KEY='c'.repeat(64);
+test('Premium authorizes private dispatch, isolates visibility, preserves discounts and lets expired members finish work',async()=>{
+ const {db}=await import('../src/lib/server/db');const {encrypt}=await import('../src/lib/server/auth-store');
+ const board=await import('../src/lib/server/job-board-store');const c=await import('../src/lib/server/company-store');
+ const {saveCustomerDetails}=await import('../src/lib/server/customer-details');const {customerDetailsSchema}=await import('../src/lib/auth-domain');
+ const admin:Session={id:'admin',name:'Admin',phone:'',role:'admin'},company:Session={...admin,id:'company',role:'user'},other:Session={...company,id:'other'},d:Session={...admin,id:'driver',role:'driver'},d2:Session={...d,id:'driver2'};
+ for(const u of [admin,company,other,d,d2]){await db.prepare('INSERT INTO users VALUES(?,?,?,?,0)').run(u.id,u.name,'',u.role);if(u.role==='driver')await db.prepare('INSERT INTO driver_applications VALUES(?,?,?,NULL,NULL,?)').run(u.id,'APPROVED',encrypt(Buffer.from(JSON.stringify({vehicleType:'pickup'}))),new Date().toISOString());}
+ await saveCustomerDetails(company.id,customerDetailsSchema.parse({customerType:'business',companyName:'QA company',address:'1 Example Road',subdistrict:'Test',district:'Test',province:'Bangkok',postalCode:'10100'}));
+ const future=new Date(Date.now()+86400000).toISOString(),past=new Date(Date.now()-86400000).toISOString();
+ await assert.rejects(()=>c.updatePremium(company,{kind:'settings',monthly_thb:10,default_discount_pct:5}));
+ await assert.rejects(()=>c.updatePremium(admin,{kind:'settings',monthly_thb:10,default_discount_pct:101}));
+ await assert.rejects(()=>c.addDriver(company,{driver_id:d.id}));
+ const grant={kind:'account',user_id:company.id,expires_at:future,suspended:false,discount_pct:15,discount_expires_at:future};
+ await c.updatePremium(admin,grant);await c.addDriver(company,{driver_id:d.id});
+ assert.equal((await c.publicPlan()).monthly_thb,199);
+ await c.updatePremium(admin,{kind:'rights',user_id:company.id,rights:{direct_dispatch:false,repeat_post:false,manage_drivers:false}});
+ await assert.rejects(()=>c.addDriver(company,{driver_id:d2.id}));
+ await assert.rejects(()=>c.requirePremium(company,'repeat_post'));
+ await c.updatePremium(admin,{kind:'rights',user_id:company.id,reset:true,rights:{direct_dispatch:true,repeat_post:true,manage_drivers:true}});
+ assert.equal((await c.rights(company.id)).direct_dispatch,true);
+ await c.requestPremium(company);await c.requestPremium(company);
+ assert.equal((await db.prepare('SELECT user_id FROM premium_signup_requests WHERE user_id=?').all(company.id)).length,1);
+ const input={vehicle_type:'pickup',job_type:'QA',pickup:'A',dropoff:'B',scheduled_at:future,helpers_count:0,price_thb:700,allow_offers:false,contact_phone_private:'0812345678',assigned_driver_id:d.id};
+ const job=await board.saveBoard(company,input);assert.equal(job.fee_discount_pct,15);assert.equal(job.price_thb,700);
+ for(const viewer of [null,other,d2]){assert.equal((await board.boardList(viewer,new URLSearchParams())).length,0);await assert.rejects(()=>board.boardDetail(job.id,viewer));await assert.rejects(()=>board.boardOffers(job.id,viewer));}
+ assert.equal((await board.boardList(d,new URLSearchParams('mine=1')))[0].assignment?.state,'pending');
+ await assert.rejects(()=>board.acceptBoard(d2,job.id));
+ await c.respondAssignment(d,job.id,'decline');await assert.rejects(()=>board.acceptBoard(d,job.id));
+ await c.respondAssignment(company,job.id,'assign',d.id);
+ await c.updatePremium(admin,{...grant,expires_at:past,discount_pct:30});
+ assert.equal((await board.boardDetail(job.id,company)).fee_discount_pct,15);
+ await assert.rejects(()=>board.saveBoard(company,{...input,repeat_from:job.id}));
+ await assert.rejects(()=>c.respondAssignment(company,job.id,'assign',d.id));
+ await board.acceptBoard(d,job.id);await board.boardStatus(d,job.id,'in_progress');await board.boardStatus(d,job.id,'done');
+ const publicJob=await board.saveBoard(company,{...input,assigned_driver_id:undefined});assert.equal(publicJob.price_thb,700);
+ await c.updatePremium(admin,grant);await c.respondAssignment(company,publicJob.id,'assign',d.id);await c.updatePremium(admin,{...grant,expires_at:past});
+ await c.respondAssignment(company,publicJob.id,'public');assert.ok((await board.boardList(null,new URLSearchParams())).some(j=>j.id===publicJob.id));
+ assert.ok((await db.prepare("SELECT id FROM audit WHERE action='PREMIUM_UPDATE'").all()).length>0);
+});

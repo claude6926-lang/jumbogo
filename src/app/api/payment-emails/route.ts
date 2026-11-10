@@ -1,0 +1,8 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {z} from 'zod';
+import {requireUser,requireOrigin,rateLimit,AuthError} from '@/lib/server/auth-store';
+import {db} from '@/lib/server/db';
+import {retryPaymentEmails,sendTestPaymentEmail} from '@/lib/server/payment-email';
+export const runtime='nodejs';export const dynamic='force-dynamic';
+async function handler(req:NextRequest){try{const user=await requireUser(req);if(user.role!=='admin')throw new AuthError(403,'FORBIDDEN');await rateLimit('receipt-admin:'+user.id,10,60000);if(req.method==='POST'){requireOrigin(req);const text=await req.text();if(text.length>1000)throw new AuthError(413,'ข้อมูลยาวเกินไป');const body=text?JSON.parse(text):{};if(body.action==='test'){await rateLimit('receipt-test:'+user.id,5,15*60000);if(!process.env.RESEND_API_KEY||!process.env.MAIL_FROM)throw new AuthError(503,'กรุณาตั้งค่า RESEND_API_KEY และ MAIL_FROM ก่อนทดสอบ');return NextResponse.json(await sendTestPaymentEmail(user.id,{email:body.email,kind:body.kind,idem:body.idem}),{headers:{'Cache-Control':'private, no-store'}});}return NextResponse.json(await retryPaymentEmails(),{headers:{'Cache-Control':'private, no-store'}});}const rows=await db.prepare('SELECT id,kind,payment_id,status,sent_at FROM payment_email_outbox ORDER BY rowid DESC LIMIT 100').all();return NextResponse.json({configured:!!process.env.RESEND_API_KEY&&!!process.env.MAIL_FROM,items:rows},{headers:{'Cache-Control':'private, no-store'}});}catch(e){return NextResponse.json({error:e instanceof AuthError?e.message:e instanceof z.ZodError?'กรุณาตรวจสอบอีเมลและข้อมูล':'ส่งไม่สำเร็จ กรุณาตรวจการตั้งค่าอีเมล'},{status:e instanceof AuthError?e.status:e instanceof z.ZodError?400:500});}}
+export const GET=handler;export const POST=handler;

@@ -1,0 +1,43 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import type {Job,Session} from '../src/lib/domain';
+
+test('notification ownership, recipient messages, read persistence and rollback',async()=>{
+ process.env.TURSO_DATABASE_URL='';process.env.DATABASE_PATH=':memory:';process.env.DEMO_MODE='false';
+ const {db,saveJob,transaction}=await import('../src/lib/server/db');
+ const {notificationFeed,readNotifications}=await import('../src/lib/server/notifications');
+ const user:Session={id:'n-user',role:'user',name:'Customer',phone:''};
+ const driver:Session={id:'n-driver',role:'driver',name:'Driver',phone:''};
+ const other:Session={id:'n-other',role:'user',name:'Other',phone:''};
+ for(const u of [user,driver,other])await db.prepare('INSERT INTO users VALUES(?,?,?,?,1)').run(u.id,u.name,u.phone,u.role);
+ const at=new Date().toISOString();
+ const job:Job={id:'notification-job',userId:user.id,driverId:driver.id,pickup:'Pickup',drops:['Drop'],vehicle:'pickup',status:'ACCEPTED',fare:{base:250,distance:1,distanceFee:12,helper:0,stops:0,total:262},credit:0,total:262,note:'',scheduledAt:null,createdAt:at,history:[{from:'SEARCHING',to:'ACCEPTED',at,actor:driver.id}]};
+ await saveJob(job);
+ await db.prepare('INSERT INTO messages VALUES(?,?,?,?,?,?)').run('message1',job.id,user.id,'user','Hello',at);
+ await db.prepare('INSERT INTO ledger VALUES(?,?,?,?,?,?,?)').run('credit1',user.id,100,'WELCOME',null,'test-welcome',at);
+ assert.equal((await notificationFeed(user)).unread,2);
+ assert.equal((await notificationFeed(driver)).unread,2);
+ assert.equal((await notificationFeed(other)).items.length,0);
+ assert.equal((await notificationFeed(user)).items.some(i=>i.kind==='message'),false);
+ await readNotifications(other,['job:notification-job:0']);
+ assert.equal((await notificationFeed(user)).unread,2);
+ await readNotifications(user,['job:notification-job:0','job:notification-job:0']);
+ assert.equal((await notificationFeed(user)).unread,1);
+ assert.equal((await notificationFeed(driver)).unread,2);
+ await assert.rejects(transaction(async()=>{job.history.push({from:'ACCEPTED',to:'CANCELLED',at,actor:user.id});await saveJob(job);throw Error('rollback');}));
+ assert.equal((await notificationFeed(user)).items.some(i=>i.titleEn==='Delivery cancelled'),false);
+ await readNotifications(driver,(await notificationFeed(driver)).items.map(i=>i.id));
+ assert.equal((await notificationFeed(driver)).unread,0);
+ const offer={...job,id:'available-job',driverId:null,status:'SEARCHING' as const,history:[]};
+ await saveJob(offer);
+ await db.prepare('INSERT INTO driver_applications VALUES(?,?,?,?,?,?)').run(driver.id,'APPROVED',null,null,at,at);
+ await db.prepare('INSERT INTO driver_work VALUES(?,?,?,?)').run(driver.id,1,'pickup',at);
+ // An ongoing immediate delivery prevents new immediate offers.
+ assert.equal((await notificationFeed(driver)).items.some(i=>i.id==='offer:available-job'),false);
+ job.status='COMPLETED';await saveJob(job);
+ assert.equal((await notificationFeed(driver)).items.some(i=>i.id==='offer:available-job'),true);
+ await db.prepare('UPDATE driver_work SET online=0 WHERE user_id=?').run(driver.id);
+ assert.equal((await notificationFeed(driver)).items.some(i=>i.id==='offer:available-job'),false);
+ await db.prepare('UPDATE driver_work SET online=1,vehicle=? WHERE user_id=?').run('six',driver.id);
+ assert.equal((await notificationFeed(driver)).items.some(i=>i.id==='offer:available-job'),false);
+});

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090909">
+  <meta name="description" content="JUMBO GO จัมโบ้โก บริการขนส่งและขนย้ายบ้าน คอนโด สำนักงาน และสินค้า สำรวจรถ 5 รูปแบบและเตรียมแผนขนย้ายของคุณ">
+  <title>JUMBO GO — ย้ายเรื่องใหญ่ ให้เป็นเรื่องง่าย</title>
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body id="top">
+  <svg class="svg-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="home" viewBox="0 0 32 32"><path d="m3 14 13-11 13 11v15H19V19h-6v10H3Z"/></symbol>
+    <symbol id="office" viewBox="0 0 32 32"><path d="M6 29V3h20v26M3 29h26M13 29v-7h6v7M11 8h2m6 0h2M11 13h2m6 0h2M11 18h2m6 0h2"/></symbol>
+    <symbol id="box" viewBox="0 0 32 32"><path d="m3 9 13-6 13 6v15l-13 6-13-6Zm0 0 13 6 13-6M16 15v15M9 6l13 6"/></symbol>
+  </defs></svg>
+  <a class="skip" href="#main">ข้ามไปเนื้อหา</a>
+  <header class="header wrap">
+    <a class="brand" href="#top" aria-label="JUMBO GO หน้าแรก">JUMBO <span>GO</span></a>
+    <button class="menu-toggle" type="button" aria-controls="navigation" aria-expanded="false" aria-label="เปิดเมนู"><span></span><span></span></button>
+    <nav id="navigation" aria-label="เมนูหลัก">
+      <a href="#services">บริการของเรา</a><a href="#vehicles">เลือกรถ</a><a href="#steps">ขั้นตอนการใช้บริการ</a>
+    </nav>
+    <a class="button outline header-cta" href="#planner">วางแผนขนย้าย<svg><use href="#arrow"/></svg></a>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">ย้ายเรื่องใหญ่<br><span>ให้เป็นเรื่องง่าย</span></h1>
+        <p>ขนย้ายบ้าน คอนโด สำนักงาน และสินค้า<br>เลือกรถให้เหมาะกับทุกการเดินทาง</p>
+        <div class="hero-actions"><a class="button primary" href="#planner">เริ่มวางแผนขนย้าย<svg><use href="#arrow"/></svg></a><a class="button outline" href="#vehicles">ดูรถทั้งหมด</a></div>
+      </div>
+      <figure class="hero-figure"><img src="assets/pickup-box.jpg" alt="รถกระบะตู้ทึบสีขาวติดโลโก้ JUMBO GO" width="1448" height="1086" fetchpriority="high"><figcaption>JUMBO GO / MOVE FORWARD</figcaption></figure>
+    </section>
+    <section id="services" class="services wrap" aria-label="บริการของเรา">
+      <article><svg><use href="#home"/></svg><div><h2>ย้ายบ้านและคอนโด</h2><p>จากห้องเดิม สู่การเริ่มต้นครั้งใหม่</p></div></article>
+      <article><svg><use href="#office"/></svg><div><h2>ย้ายสำนักงาน</h2><p>วางแผนย้ายพื้นที่ทำงานให้เป็นเรื่องง่าย</p></div></article>
+      <article><svg><use href="#box"/></svg><div><h2>ขนส่งสินค้า</h2><p>เลือกรถให้เหมาะกับสินค้าของคุณ</p></div></article>
+    </section>
+    <section class="vehicles wrap section" id="vehicles" aria-labelledby="vehicles-title">
+      <h2 id="vehicles-title">รถที่ใช่ <span>สำหรับของของคุณ</span></h2>
+      <div class="vehicle-tabs" role="tablist" aria-label="ประเภทรถ">
+        <button type="button" role="tab" id="tab-box" aria-controls="vehicle-panel" aria-selected="true" data-vehicle="box">กระบะตู้ทึบ</button>
+        <button type="button" role="tab" id="tab-pickup" aria-controls="vehicle-panel" aria-selected="false" tabindex="-1" data-vehicle="pickup">กระบะ</button>
+        <button type="button" role="tab" id="tab-cage" aria-controls="vehicle-panel" aria-selected="false" tabindex="-1" data-vehicle="cage">กระบะคอก</button>
+        <button type="button" role="tab" id="tab-jumbo" aria-controls="vehicle-panel" aria-selected="false" tabindex="-1" data-vehicle="jumbo">จัมโบ้</button>
+        <button type="button" role="tab" id="tab-large" aria-controls="vehicle-panel" aria-selected="false" tabindex="-1" data-vehicle="large">รถบรรทุกขนาดใหญ่</button>
+      </div>
+      <div class="vehicle-panel" id="vehicle-panel" role="tabpanel" aria-labelledby="tab-box" tabindex="0">
+        <img id="vehicle-image" src="assets/pickup-box.jpg" alt="รถกระบะตู้ทึบ JUMBO GO" width="1448" height="1086" loading="lazy">
+        <div class="vehicle-details" aria-live="polite" aria-atomic="true"><span class="vehicle-index" id="vehicle-index">01 / 05</span><h3 id="vehicle-name">กระบะตู้ทึบ</h3><p id="vehicle-description">พื้นที่บรรทุกแบบปิด เหมาะกับการขนย้ายของใช้ในบ้าน กล่องสัมภาระ และสินค้าที่ต้องการหลีกเลี่ยงแดดและฝน</p><dl><div><dt>เหมาะกับ</dt><dd id="vehicle-use">ย้ายบ้าน · คอนโด · ของใช้ทั่วไป</dd></div><div><dt>ลักษณะรถ</dt><dd id="vehicle-feature">กระบะพร้อมตู้บรรทุกแบบปิด</dd></div></dl><a class="button primary" id="choose-vehicle" href="#planner">เลือกรถประเภทนี้<svg><use href="#arrow"/></svg><span class="sr-only" id="choose-name">กระบะตู้ทึบ</span></a><p class="fine">ควรตรวจสอบขนาดสิ่งของและน้ำหนักกับผู้ให้บริการก่อนจอง</p></div>
+      </div>
+    </section>
+    <section class="steps section" id="steps" aria-labelledby="steps-title"><div class="wrap">
+      <h2 id="steps-title">เริ่มต้นง่าย <span>ใน 3 ขั้นตอน</span></h2>
+      <ol><li><span class="step-number">01</span><h3>แจ้งรายละเอียด</h3><p>ระบุจุดรับ จุดส่ง และวันที่ต้องการขนย้าย พร้อมรายการสิ่งของของคุณ</p></li><li><span class="step-number">02</span><h3>เลือกรถที่เหมาะสม</h3><p>ดูรูปแบบรถและเลือกให้เหมาะกับปริมาณ ขนาด และประเภทสิ่งของ</p></li><li><span class="step-number">03</span><h3>พร้อมออกเดินทาง</h3><p>นำรายละเอียดไปจองในระบบ ตรวจสอบราคาและยืนยันงานก่อนขนย้าย</p></li></ol>
+    </div></section>
+    <section class="planner wrap section" id="planner" aria-labelledby="planner-title">
+      <div><h2 id="planner-title">พร้อมย้าย<br><span>ไปด้วยกัน</span></h2><p>เตรียมรายละเอียดการขนย้ายของคุณ<br>แล้วนำไปใช้จองรถในระบบ JUMBO GO</p></div>
+      <form id="plan-form">
+        <div class="form-grid"><label>จุดรับของ<input name="origin" id="origin" placeholder="เช่น บางนา กรุงเทพฯ" required maxlength="200" autocomplete="off"></label><label>จุดส่งของ<input name="destination" id="destination" placeholder="เช่น เมืองนนทบุรี" required maxlength="200" autocomplete="off"></label><label>วันที่ขนย้าย<input type="date" name="date" id="move-date" required></label><label>ประเภทรถ<select name="vehicle" id="plan-vehicle" required><option value="box">กระบะตู้ทึบ</option><option value="pickup">กระบะ</option><option value="cage">กระบะคอก</option><option value="jumbo">จัมโบ้</option><option value="large">รถบรรทุกขนาดใหญ่</option></select></label></div>
+        <button type="submit" class="button primary submit">สรุปแผนขนย้าย<svg><use href="#arrow"/></svg></button><p class="fine">เตรียมข้อมูลเบื้องต้น ยังไม่ใช่การยืนยันการจอง ข้อมูลจะไม่ถูกส่งจากหน้านี้</p>
+      </form>
+    </section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="#top" aria-label="JUMBO GO กลับด้านบน">JUMBO <span>GO</span></a><p>จัมโบ้โก · ให้เรื่องขนของเป็นเรื่องง่าย</p><a class="back-top" href="#top">กลับด้านบน<svg><use href="#arrow"/></svg></a></footer>
+  <dialog id="plan-dialog" aria-labelledby="summary-title"><div class="dialog-header"><span>JUMBO <b>GO</b></span><button type="button" id="close-dialog" aria-label="ปิดสรุปแผน">×</button></div><h2 id="summary-title">แผนขนย้ายของคุณ</h2><p class="dialog-note">ตรวจสอบและคัดลอกข้อมูลเพื่อใช้ในการจองรถ</p><dl id="plan-summary"></dl><p class="fine">นี่คือสรุปข้อมูล ยังไม่มีการส่งคำขอหรือยืนยันการจอง</p><button type="button" class="button primary" id="copy-plan">คัดลอกรายละเอียด<svg><use href="#arrow"/></svg></button><p role="status" id="copy-status"></p><textarea id="copy-fallback" aria-label="รายละเอียดสำหรับคัดลอกด้วยตนเอง" readonly hidden></textarea></dialog>
+  <noscript><p class="noscript">เปิด JavaScript เพื่อสลับประเภทรถและสรุปแผนขนย้าย</p></noscript>
+</body>
+</html>

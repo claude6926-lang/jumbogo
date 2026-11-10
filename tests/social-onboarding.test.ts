@@ -1,0 +1,26 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { NextRequest } from 'next/server';
+process.env.DATABASE_PATH = ':memory:';
+process.env.APP_URL = 'https://127.0.0.1:3000';
+test('new Google users complete registration before receiving a session; returning users go home', async () => {
+    const { db } = await import('../src/lib/server/db');
+    const { completeVerifiedOAuth } = await import('../src/lib/server/oauth');
+    const { createAccount } = await import('../src/lib/server/auth-store');
+    const req = new NextRequest('https://127.0.0.1:3000/api/auth/oauth/google/callback');
+    const claims = { sub: 'new-google-user', name: 'Google Customer', email: 'customer@example.com', email_verified: true };
+    const response = (await completeVerifiedOAuth(req, 'google', 'user', claims));
+    assert.equal(new URL(response.headers.get('location')!).pathname, '/auth/complete');
+    assert.equal(response.cookies.has('jumbo_session'), false);
+    const pendingToken = response.cookies.get('jumbo_pending')!.value;
+    const pending = (await db.prepare('SELECT name,email,provider FROM oauth_pending WHERE id=?').get(pendingToken));
+    assert.deepEqual({ ...pending }, { name: claims.name, email: claims.email, provider: 'google' });
+    assert.equal((await db.prepare('SELECT count(*) n FROM identities').get())!.n, 0);
+    const id = (await createAccount({ name: claims.name, email: claims.email, phone: '0812345678', role: 'user' }, null, { provider: 'google', subject: claims.sub, pendingToken }));
+    const returning = (await completeVerifiedOAuth(req, 'google', 'user', claims));
+    assert.equal(new URL(returning.headers.get('location')!).pathname, '/user/home');
+    assert.equal((await db.prepare('SELECT user_id FROM sessions WHERE token=?').get(returning.cookies.get('jumbo_session')!.value))!.user_id, id);
+    assert.equal((await db.prepare('SELECT count(*) n FROM oauth_pending WHERE id=?').get(pendingToken))!.n, 0);
+    const unverified = (await completeVerifiedOAuth(req, 'google', 'user', { sub: 'unverified', email: 'unverified@example.com', email_verified: false }));
+    assert.equal((await db.prepare('SELECT email FROM oauth_pending WHERE id=?').get(unverified.cookies.get('jumbo_pending')!.value))!.email, '');
+});
